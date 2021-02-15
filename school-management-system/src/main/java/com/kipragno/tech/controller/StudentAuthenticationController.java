@@ -1,6 +1,7 @@
 package com.kipragno.tech.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -41,19 +42,29 @@ public class StudentAuthenticationController {
 	public ResponseEntity<?> register(@RequestBody Student student) {
 		// Encrypt user password
 		student.setPassword(bcryptPasswordEncoder.encode(student.getPassword()));
-		studentAuthenticationService.register(student);
-		return ResponseEntity.ok("Registered");
+		String response = studentAuthenticationService.register(student);
+		if(response != null && response.equals("409")) {
+			return new ResponseEntity<>("Already Registered", HttpStatus.CONFLICT);
+		}else if(response != null && response.equals("500")) {
+			return new ResponseEntity<>("User not registered please try again", HttpStatus.INTERNAL_SERVER_ERROR);
+		}else {
+			return new ResponseEntity<>(response, HttpStatus.CREATED);
+		}
 	}
 	
 	@PostMapping(value = "/login")
-	public ResponseEntity<?> createAuthenticationToken(@RequestBody AuthenticationRequest authenticationRequest) throws Exception{
-		//Authenticate user
-		authenticate(authenticationRequest.getUsername(), authenticationRequest.getPassword());
+	public ResponseEntity<?> createAuthenticationToken(@RequestBody AuthenticationRequest authenticationRequest) {
+		try {
+			//Authenticate user
+			authenticate(authenticationRequest.getUsername(), authenticationRequest.getPassword());
+		}catch(Exception e) {
+			return new ResponseEntity<>("Incorrect username or password", HttpStatus.NOT_FOUND);
+		}
 		
 		final UserDetails userDetails = studentAuthenticationService.loadUserByUsername(authenticationRequest.getUsername());
 		final String jwt = jwtTokenUtil.generateToken(userDetails);
 		
-		return ResponseEntity.ok(new AuthenticationReponse(jwt));
+		return new ResponseEntity<>(new AuthenticationReponse(jwt),  HttpStatus.CREATED);
 	}
 	
 	private void authenticate(String username, String password) throws Exception {
@@ -62,7 +73,8 @@ public class StudentAuthenticationController {
 		} catch (DisabledException e) {
 			throw new Exception("USER_DISABLED", e);
 		} catch (BadCredentialsException e) {
-			throw new Exception("INVALID_CREDENTIALS", e);
+			e.printStackTrace();
+			throw new Exception("BAD_CREDENTIAL", e);
 		}
 	}
 }

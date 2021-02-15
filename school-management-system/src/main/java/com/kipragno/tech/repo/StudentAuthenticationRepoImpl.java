@@ -10,6 +10,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Repository;
 
 import com.kipragno.tech.entites.Student;
+import com.kipragno.tech.exception.ResourceNotFoundException;
 
 @Repository
 public class StudentAuthenticationRepoImpl implements StudentAuthenticationRepo {
@@ -18,9 +19,31 @@ public class StudentAuthenticationRepoImpl implements StudentAuthenticationRepo 
 	private SessionFactory sessionFactory;
 	
 	@Override
-	public void register(Student student) {
+	public String register(Student student) {
 		Session session = sessionFactory.getCurrentSession();
-		session.save(student);
+		String queryString = "from Student where emailId = :emailId";
+		System.out.println(queryString);
+		String emailId = student.getEmailId();
+		Query query = session.createQuery(queryString);
+		query.setString("emailId", emailId);
+		try {
+			Student dbStudent = (Student) query.getSingleResult();
+				return "409";
+		}catch(Exception e) {
+			try {
+				session.save(student);
+				Student dbStudent = (Student) query.getSingleResult();
+				if(dbStudent != null) {
+					return "Registration No : " + dbStudent.getRegistrationNo();
+				}else {
+					return "500";
+				}
+			}catch(Exception ex) {
+				ex.printStackTrace();
+				return "500";
+			}
+		}
+		
 	}
 
 	
@@ -31,9 +54,16 @@ public class StudentAuthenticationRepoImpl implements StudentAuthenticationRepo 
 		System.out.println(queryString);
 		Query query = session.createQuery(queryString);
 		query.setString("emailId", emailId);
-		Student student = (Student) query.getSingleResult();
-		return new org.springframework.security.core.userdetails.User(student.getEmailId(), student.getPassword(),
-				new ArrayList<>());
+		try {
+			Student student = (Student) query.getSingleResult();
+			return new org.springframework.security.core.userdetails.User(student.getEmailId(), student.getPassword(),
+					new ArrayList<>());
+		}catch(Exception e) {
+			e.printStackTrace();
+			throw new ResourceNotFoundException("Incorrect username or password");
+		}
+		
 	}
+
 
 }

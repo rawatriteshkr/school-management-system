@@ -6,7 +6,7 @@ import com.kipragno.tech.entites.Student;
 
 public interface StudentAuthenticationRepo {
 
-	public void register(Student student);
+	public String register(Student student);
 	
 	public UserDetails loadUserByUsername(String username);
 }
