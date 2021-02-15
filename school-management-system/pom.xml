@@ -13,6 +13,7 @@
 	<artifactId>com.ntt.data</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>spring-boot-jwt-backend</name>
+	<packaging>jar</packaging>
 	<description>spring-boot-jwt-backend</description>
 	<properties>
 		<java.version>1.8</java.version>
