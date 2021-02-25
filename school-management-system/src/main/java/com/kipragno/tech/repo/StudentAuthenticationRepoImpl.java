@@ -4,6 +4,7 @@ import java.util.ArrayList;
 
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
+import org.hibernate.Transaction;
 import org.hibernate.query.Query;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -20,10 +21,11 @@ public class StudentAuthenticationRepoImpl implements StudentAuthenticationRepo 
 	
 	@Override
 	public String register(Student student) {
-		Session session = sessionFactory.getCurrentSession();
-		String queryString = "from Student where emailId = :emailId";
+		Session session = sessionFactory.openSession();
+		Transaction transaction = session.beginTransaction();
+		/*String queryString = "from Student where emailId = :emailId";
 		System.out.println(queryString);
-		String emailId = student.getEmailId();
+		//String emailId = student.getEmailId();
 		Query query = session.createQuery(queryString);
 		query.setString("emailId", emailId);
 		try {
@@ -42,14 +44,23 @@ public class StudentAuthenticationRepoImpl implements StudentAuthenticationRepo 
 				ex.printStackTrace();
 				return "500";
 			}
-		}
+		}*/
+		session.save(student);
+		session.save(student.getGuardianContact());
+		session.save(student.getGuardianContact().getPermanentAddress());
+		session.save(student.getGuardianContact().getMailingAddress());
+		session.save(student.getStudentPersonalDetails());
+		session.save(student.getStudentPreviousDetails());
+		transaction.commit();
+		session.close();
+		return "done";
 		
 	}
 
 	
 	@Override
 	public UserDetails loadUserByUsername(String emailId) {
-		Session session = sessionFactory.getCurrentSession();
+		/*Session session = sessionFactory.getCurrentSession();
 		String queryString = "from Student where emailId = :emailId";
 		System.out.println(queryString);
 		Query query = session.createQuery(queryString);
@@ -62,6 +73,8 @@ public class StudentAuthenticationRepoImpl implements StudentAuthenticationRepo 
 			e.printStackTrace();
 			throw new ResourceNotFoundException("Incorrect username or password");
 		}
+		*/
+		return null;
 		
 	}
 

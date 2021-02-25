@@ -22,7 +22,7 @@ public class StudentController {
 	@GetMapping("/student/{registrationNo}")
 	public ResponseEntity<Student> retreiveEmployeeById(@PathVariable Long registrationNo){
 		Student student = studentService.retreiveStudentById(registrationNo);
-		student.setPassword(null);
+		//student.setPassword(null);
 		return ResponseEntity.ok(student);
 		
 	}

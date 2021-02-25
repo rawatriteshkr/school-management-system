@@ -41,7 +41,7 @@ public class StudentAuthenticationController {
 	@PostMapping("/register")
 	public ResponseEntity<?> register(@RequestBody Student student) {
 		// Encrypt user password
-		student.setPassword(bcryptPasswordEncoder.encode(student.getPassword()));
+		//student.setPassword(bcryptPasswordEncoder.encode(student.getPassword()));
 		String response = studentAuthenticationService.register(student);
 		if(response != null && response.equals("409")) {
 			return new ResponseEntity<>("Already Registered", HttpStatus.CONFLICT);
