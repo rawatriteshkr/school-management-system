@@ -9,12 +9,12 @@
 		<version>2.4.2</version>
 		<relativePath /> <!-- lookup parent from repository -->
 	</parent>
-	<groupId>spring-boot-jwt-backend</groupId>
-	<artifactId>com.ntt.data</artifactId>
+	<groupId>school-management-system</groupId>
+	<artifactId>com.kipragno.tech</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>spring-boot-jwt-backend</name>
+	<name>school-management-system</name>
 	<packaging>jar</packaging>
-	<description>spring-boot-jwt-backend</description>
+	<description>school-management-system</description>
 	<properties>
 		<java.version>1.8</java.version>
 	</properties>
@@ -54,6 +54,13 @@
 			<artifactId>mysql-connector-java</artifactId>
 			<version>5.1.42</version>
 		</dependency>
+
+		<!-- https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-mail -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-mail</artifactId>
+			</dependency>
+
 	</dependencies>
 
 	<build>

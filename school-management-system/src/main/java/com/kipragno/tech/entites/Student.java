@@ -32,14 +32,16 @@ public class Student {
 	@Embedded
 	private StudentFullName studentFullName;
 	@Embedded
-	private StudentCredentials studentCredentials;
-	@Embedded
 	private StudentContact studentContact;
 	@Embedded
 	private FeesDetails feesDetails;
 	@Embedded
 	private GuardianDetails guardianDetails;
 
+	@OneToOne
+	@JoinColumn(name = "credential_id")
+	private StudentCredentials studentCredentials;
+	
 	@OneToOne
 	@JoinColumn(name = "contact_id")
 	private GuardianContact guardianContact;

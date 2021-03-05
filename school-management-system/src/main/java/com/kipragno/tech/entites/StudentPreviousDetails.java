@@ -26,16 +26,16 @@ public class StudentPreviousDetails {
 	@Column(name = "tc")
 	private String tc;
 	@Column(name = "percentage")
-	private String percentage;
+	private Double percentage;
 	@Column(name = "academic_year")
-	private String academicYear;
+	private Long academicYear;
 
 	public StudentPreviousDetails() {
 		super();
 	}
 
 	public StudentPreviousDetails(Long previousDetailId, String previousSchool, String className, String section,
-			String board, String tc, String percentage, String academicYear) {
+			String board, String tc, Double percentage, Long academicYear) {
 		super();
 		this.previousDetailId = previousDetailId;
 		this.previousSchool = previousSchool;
@@ -95,19 +95,19 @@ public class StudentPreviousDetails {
 		this.tc = tc;
 	}
 
-	public String getPercentage() {
+	public Double getPercentage() {
 		return percentage;
 	}
 
-	public void setPercentage(String percentage) {
+	public void setPercentage(Double percentage) {
 		this.percentage = percentage;
 	}
 
-	public String getAcademicYear() {
+	public Long getAcademicYear() {
 		return academicYear;
 	}
 
-	public void setAcademicYear(String academicYear) {
+	public void setAcademicYear(Long academicYear) {
 		this.academicYear = academicYear;
 	}
 

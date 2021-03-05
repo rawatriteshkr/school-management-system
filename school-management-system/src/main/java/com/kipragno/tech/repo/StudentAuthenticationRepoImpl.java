@@ -2,6 +2,8 @@ package com.kipragno.tech.repo;
 
 import java.util.ArrayList;
 
+import javax.mail.MessagingException;
+
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.Transaction;
@@ -12,6 +14,7 @@ import org.springframework.stereotype.Repository;
 
 import com.kipragno.tech.entites.Student;
 import com.kipragno.tech.exception.ResourceNotFoundException;
+import com.kipragno.tech.mail.MailUtil;
 
 @Repository
 public class StudentAuthenticationRepoImpl implements StudentAuthenticationRepo {
@@ -45,36 +48,37 @@ public class StudentAuthenticationRepoImpl implements StudentAuthenticationRepo 
 				return "500";
 			}
 		}*/
-		session.save(student);
+		
 		session.save(student.getGuardianContact());
 		session.save(student.getGuardianContact().getPermanentAddress());
 		session.save(student.getGuardianContact().getMailingAddress());
+		session.save(student.getStudentCredentials());
 		session.save(student.getStudentPersonalDetails());
 		session.save(student.getStudentPreviousDetails());
+		session.save(student);
 		transaction.commit();
 		session.close();
-		return "done";
+		return "Registered Successfully!!!";
+		
 		
 	}
 
 	
 	@Override
-	public UserDetails loadUserByUsername(String emailId) {
-		/*Session session = sessionFactory.getCurrentSession();
-		String queryString = "from Student where emailId = :emailId";
+	public UserDetails loadUserByUsername(String registrationNo) {
+		Session session = sessionFactory.getCurrentSession();
+		String queryString = "from Student where registrationNo = :registrationNo";
 		System.out.println(queryString);
 		Query query = session.createQuery(queryString);
-		query.setString("emailId", emailId);
+		query.setString("registrationNo", registrationNo);
 		try {
 			Student student = (Student) query.getSingleResult();
-			return new org.springframework.security.core.userdetails.User(student.getEmailId(), student.getPassword(),
+			return new org.springframework.security.core.userdetails.User(student.getRegistrationNo(), student.getStudentCredentials().getPassword(),
 					new ArrayList<>());
 		}catch(Exception e) {
 			e.printStackTrace();
 			throw new ResourceNotFoundException("Incorrect username or password");
 		}
-		*/
-		return null;
 		
 	}
 

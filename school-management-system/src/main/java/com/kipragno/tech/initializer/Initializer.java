@@ -4,6 +4,7 @@ import java.util.Date;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,6 +18,7 @@ import com.kipragno.tech.entites.StudentCredentials;
 import com.kipragno.tech.entites.StudentFullName;
 import com.kipragno.tech.entites.StudentPersonalDetails;
 import com.kipragno.tech.entites.StudentPreviousDetails;
+import com.kipragno.tech.generator.PasswordGenerator;
 import com.kipragno.tech.repo.StudentAuthenticationRepoImpl;
 
 @Component
@@ -25,10 +27,14 @@ public class Initializer implements CommandLineRunner {
 
 	@Autowired
 	private StudentAuthenticationRepoImpl studentAuthenticationRepoImpl;
+	
+	@Autowired
+	private BCryptPasswordEncoder bcryptPasswordEncoder;
 
 	@Override
 	public void run(String... args) throws Exception {
 		
+		/*
 		Student s = new Student();
 		StudentFullName studentFullName = new StudentFullName();
 		studentFullName.setFirstName("Ritesh");
@@ -37,9 +43,15 @@ public class Initializer implements CommandLineRunner {
 		
 		StudentCredentials studentCredentials = new StudentCredentials();
 		studentCredentials.setEmail("rkr@123");
-		studentCredentials.setUsername("rkr@123");
-		studentCredentials.setPassword("123");
-		studentCredentials.setConfirmPassword("123");
+		
+		// Encrypt user password
+		String otp = PasswordGenerator.generatePassword(8);
+		String oneTimeEncryptedPassword = bcryptPasswordEncoder.encode(otp);
+		studentCredentials.setPassword(oneTimeEncryptedPassword);
+		studentCredentials.setConfirmPassword(oneTimeEncryptedPassword);
+		studentCredentials.setRegistrationTime(new Date());
+		studentCredentials.setPasswordChangeDate(new Date());
+		studentCredentials.setOtp(otp);
 		
 		StudentContact studentContact = new StudentContact();
 		studentContact.setGovernmentIdType("Aadhar");
@@ -90,7 +102,7 @@ public class Initializer implements CommandLineRunner {
 		StudentPersonalDetails studentPersonalDetails = new StudentPersonalDetails();
 		studentPersonalDetails.setBloodGroup("A");
 		studentPersonalDetails.setDisability("NO");
-		studentPersonalDetails.setDisabilityType(null);
+		studentPersonalDetails.setDisabilityType("NA");
 		studentPersonalDetails.setHeight(5.7);
 		studentPersonalDetails.setWeight(67.6);
 		studentPersonalDetails.setLanguage_1("Java");
@@ -111,7 +123,7 @@ public class Initializer implements CommandLineRunner {
 		s.setStudentPersonalDetails(studentPersonalDetails);
 		s.setStudentPreviousDetails(studentPreviousDetails);
 		String t = studentAuthenticationRepoImpl.register(s);
-		System.out.println(t);
+		System.out.println(t); */
 	}
 
 }

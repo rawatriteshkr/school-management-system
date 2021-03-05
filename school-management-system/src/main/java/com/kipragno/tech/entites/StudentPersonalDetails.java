@@ -15,7 +15,7 @@ public class StudentPersonalDetails {
 	@GeneratedValue(strategy = GenerationType.AUTO)
 	@Column(name = "personal_detail_id")
 	private Long personalDetailId;
-	@Column(name = "gender")
+	@Column(name = "gender", nullable = false)
 	private String gender;
 	@Column(name = "blood_group")
 	private String bloodGroup;
@@ -23,7 +23,7 @@ public class StudentPersonalDetails {
 	private Double weight;
 	@Column(name = "height")
 	private Double height;
-	@Column(name = "language_1")
+	@Column(name = "language_1", nullable = false)
 	private String language_1;
 	@Column(name = "language_2")
 	private String language_2;
@@ -31,9 +31,9 @@ public class StudentPersonalDetails {
 	private String language_3;
 	@Column(name = "religion")
 	private String religion;
-	@Column(name = "disability")
+	@Column(name = "disability", nullable = false)
 	private String disability;
-	@Column(name = "disability_type")
+	@Column(name = "disability_type", nullable = false)
 	private String disabilityType;
 
 	public StudentPersonalDetails() {

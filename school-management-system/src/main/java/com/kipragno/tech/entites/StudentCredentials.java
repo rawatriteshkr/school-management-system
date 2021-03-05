@@ -1,30 +1,94 @@
 package com.kipragno.tech.entites;
 
-import javax.persistence.Column;
-import javax.persistence.Embeddable;
+import java.util.Date;
 
-@Embeddable
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
+import javax.persistence.Transient;
+
+@Entity
+@Table(name = "student_credentials")
 public class StudentCredentials {
 
-	@Column(name="email", nullable = false)
+	@Id
+	@GeneratedValue(strategy = GenerationType.AUTO)
+	@Column(name = "credential_id")
+	private Long credentialId;
+	@Column(name = "email", nullable = false)
 	private String email;
-	@Column(name="username", nullable = false)
-	private String username;
-	@Column(name="password", nullable = false)
+	@Column(name = "password", nullable = false)
 	private String password;
-	@Column(name="confirm_password", nullable = false)
+	@Column(name = "confirm_password", nullable = false)
 	private String confirmPassword;
+	@Temporal(TemporalType.TIMESTAMP)
+	@Column(name = "registration_time", nullable = false)
+	private Date registrationTime;
+	@Temporal(TemporalType.TIMESTAMP)
+	@Column(name = "password_change_date", nullable = false)
+	private Date passwordChangeDate;
+	@Transient
+	private String otp;
 
 	public StudentCredentials() {
 		super();
 	}
 
-	public StudentCredentials(String email, String username, String password, String confirmPassword) {
+	
+
+	public StudentCredentials(Long credentialId, String email, String password, String confirmPassword,
+			Date registrationTime, Date passwordChangeDate, String otp) {
 		super();
+		this.credentialId = credentialId;
 		this.email = email;
-		this.username = username;
 		this.password = password;
 		this.confirmPassword = confirmPassword;
+		this.registrationTime = registrationTime;
+		this.passwordChangeDate = passwordChangeDate;
+		this.otp = otp;
+	}
+
+
+
+	public String getOtp() {
+		return otp;
+	}
+
+
+
+	public void setOtp(String otp) {
+		this.otp = otp;
+	}
+
+
+
+	public Date getRegistrationTime() {
+		return registrationTime;
+	}
+
+	public void setRegistrationTime(Date registrationTime) {
+		this.registrationTime = registrationTime;
+	}
+
+	public Date getPasswordChangeDate() {
+		return passwordChangeDate;
+	}
+
+	public void setPasswordChangeDate(Date passwordChangeDate) {
+		this.passwordChangeDate = passwordChangeDate;
+	}
+
+	public Long getCredentialId() {
+		return credentialId;
+	}
+
+	public void setCredentialId(Long credentialId) {
+		this.credentialId = credentialId;
 	}
 
 	public String getEmail() {
@@ -33,14 +97,6 @@ public class StudentCredentials {
 
 	public void setEmail(String email) {
 		this.email = email;
-	}
-
-	public String getUsername() {
-		return username;
-	}
-
-	public void setUsername(String username) {
-		this.username = username;
 	}
 
 	public String getPassword() {

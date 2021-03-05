@@ -6,9 +6,9 @@ import javax.persistence.Embeddable;
 @Embeddable
 public class FeesDetails {
 
-	@Column(name="fees_paid")
+	@Column(name="fees_paid", nullable = false)
 	private String feesPaid;
-	@Column(name="receipt_no")
+	@Column(name="receipt_no", nullable = false)
 	private String receiptNo;
 
 	public FeesDetails() {
