@@ -17,8 +17,8 @@ public class StudentAuthenticationService implements UserDetailsService{
 	@Autowired
 	private StudentAuthenticationRepoImpl studentAuthenticationRepoImpl;
 	
-	public void register(Student student) {
-		studentAuthenticationRepoImpl.register(student);
+	public String register(Student student) {
+		return studentAuthenticationRepoImpl.register(student);
 	}
 	
 	@Override

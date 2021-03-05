@@ -1,5 +1,7 @@
 package com.kipragno.tech;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -18,11 +20,16 @@ import org.springframework.context.annotation.ComponentScan;
         "com.kipragno.tech.model",
         "com.kipragno.tech.repo",
         "com.kipragno.tech.service",
-        "com.kipragno.tech.util"
+        "com.kipragno.tech.util",
+        "com.kipragno.tech.generator",
+        "com.kipragno.tech.mail"
     })
 public class SpringBootDemoApplication {
 
+	private static final Logger logger = LoggerFactory.getLogger(SpringBootDemoApplication.class);
+	
 	public static void main(String[] args) {
+		logger.info("Application Started...");
 		SpringApplication.run(SpringBootDemoApplication.class, args);
 	}
 
