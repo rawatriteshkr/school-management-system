@@ -13,6 +13,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Repository;
 
 import com.kipragno.tech.entites.Student;
+import com.kipragno.tech.entites.StudentCredentials;
 import com.kipragno.tech.exception.ResourceNotFoundException;
 import com.kipragno.tech.mail.MailUtil;
 
@@ -26,40 +27,31 @@ public class StudentAuthenticationRepoImpl implements StudentAuthenticationRepo 
 	public String register(Student student) {
 		Session session = sessionFactory.openSession();
 		Transaction transaction = session.beginTransaction();
-		/*String queryString = "from Student where emailId = :emailId";
+		String email = student.getStudentCredentials().getEmail();
+		String queryString = "from StudentCredentials where email = :email";
 		System.out.println(queryString);
-		//String emailId = student.getEmailId();
 		Query query = session.createQuery(queryString);
-		query.setString("emailId", emailId);
+		query.setString("email", email);
 		try {
-			Student dbStudent = (Student) query.getSingleResult();
+			StudentCredentials studentCredentials = (StudentCredentials) query.getSingleResult();
 				return "409";
 		}catch(Exception e) {
 			try {
+				session.save(student.getGuardianContact());
+				session.save(student.getGuardianContact().getPermanentAddress());
+				session.save(student.getGuardianContact().getMailingAddress());
+				session.save(student.getStudentCredentials());
+				session.save(student.getStudentPersonalDetails());
+				session.save(student.getStudentPreviousDetails());
 				session.save(student);
-				Student dbStudent = (Student) query.getSingleResult();
-				if(dbStudent != null) {
-					return "Registration No : " + dbStudent.getRegistrationNo();
-				}else {
-					return "500";
-				}
+				transaction.commit();
+				session.close();
+				return student.getRegistrationNo();
 			}catch(Exception ex) {
 				ex.printStackTrace();
 				return "500";
 			}
-		}*/
-		
-		session.save(student.getGuardianContact());
-		session.save(student.getGuardianContact().getPermanentAddress());
-		session.save(student.getGuardianContact().getMailingAddress());
-		session.save(student.getStudentCredentials());
-		session.save(student.getStudentPersonalDetails());
-		session.save(student.getStudentPreviousDetails());
-		session.save(student);
-		transaction.commit();
-		session.close();
-		return "Registered Successfully!!!";
-		
+		}
 		
 	}
 

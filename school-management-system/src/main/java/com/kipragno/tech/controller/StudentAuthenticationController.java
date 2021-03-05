@@ -81,7 +81,7 @@ public class StudentAuthenticationController {
 			} catch (MessagingException e) {
 				e.printStackTrace();
 			}*/
-			response = response + "\n" + "Registration No : " + student.getRegistrationNo() + "\n" + "Otp : "
+			response = "Registration No : " + response + "\n" + "Otp : "
 					+ student.getStudentCredentials().getOtp();
 			return new ResponseEntity<>(response, HttpStatus.CREATED);
 		}
