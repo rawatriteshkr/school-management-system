@@ -62,7 +62,7 @@ public class StudentAuthenticationController {
 	@Autowired
 	private StudentAuthenticationService studentAuthenticationService;
 
-	@PostMapping("/register")
+	@PostMapping(value = "/register")
 	public ResponseEntity<?> register(@RequestBody RegisterStudent registerStudent) throws IOException {
 
 		// Set Student values
