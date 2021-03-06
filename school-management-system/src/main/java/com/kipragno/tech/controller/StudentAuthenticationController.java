@@ -12,6 +12,7 @@ import javax.mail.MessagingException;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -19,11 +20,13 @@ import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -45,7 +48,7 @@ import com.kipragno.tech.model.RegisterStudent;
 import com.kipragno.tech.service.StudentAuthenticationService;
 import com.kipragno.tech.util.JwtUtil;
 
-@CrossOrigin
+@CrossOrigin(origins = "*", allowedHeaders = "*")
 @RestController
 @RequestMapping(value = "/api")
 public class StudentAuthenticationController {
@@ -63,10 +66,11 @@ public class StudentAuthenticationController {
 	private StudentAuthenticationService studentAuthenticationService;
 
 	@PostMapping(value = "/register")
-	public ResponseEntity<?> register(@RequestBody RegisterStudent registerStudent) throws IOException {
-
+	public ResponseEntity<?> register(@RequestPart(value = "file", required = true) MultipartFile file,
+			@RequestPart(value = "register", required = true) @Validated RegisterStudent registerStudent) throws IOException {
+		System.out.println("Image File Name : " + file.getSize());
 		// Set Student values
-		Student student = setStudentValues(registerStudent);
+		Student student = setStudentValues(registerStudent, file);
 		String response = studentAuthenticationService.register(student);
 		if (response != null && response.equals("409")) {
 			return new ResponseEntity<>("Already Registered", HttpStatus.CONFLICT);
@@ -103,14 +107,14 @@ public class StudentAuthenticationController {
 		return new ResponseEntity<>(new AuthenticationReponse(jwt), HttpStatus.CREATED);
 	}
 
-	private Student setStudentValues(RegisterStudent registerStudent) {
+	private Student setStudentValues(RegisterStudent registerStudent, MultipartFile file) {
 
 		Student student = new Student();
 		StudentFullName studentFullName = setStudentFullName(registerStudent);
 
 		StudentCredentials studentCredentials = setStudentCredentials(registerStudent);
 
-		StudentContact studentContact = setStudentContact(registerStudent);
+		StudentContact studentContact = setStudentContact(registerStudent, file);
 
 		GuardianDetails guardianDetails = setGuardianDetails(registerStudent);
 
@@ -228,6 +232,7 @@ public class StudentAuthenticationController {
 
 		StudentAddress mailingAddress = new StudentAddress();
 
+		mailingAddress.setAddressType("Mailing Address");
 		if ((registerStudent.getMailingAddress().equals("")) || (registerStudent.getMailingAddress().isEmpty())) {
 			mailingAddress.setAddress("NA");
 		} else {
@@ -256,7 +261,7 @@ public class StudentAuthenticationController {
 	private StudentAddress setPermanentAddress(RegisterStudent registerStudent) {
 		
 		StudentAddress permanentAddress = new StudentAddress();
-		
+		permanentAddress.setAddressType("Permanent Address");
 		permanentAddress.setAddress(registerStudent.getPermanentAddress());
 		permanentAddress.setCity(registerStudent.getPermanentCity());
 		permanentAddress.setState(registerStudent.getPermanentState());
@@ -329,13 +334,18 @@ public class StudentAuthenticationController {
 		return feesDetails;
 	}
 
-	private StudentContact setStudentContact(RegisterStudent registerStudent) {
+	private StudentContact setStudentContact(RegisterStudent registerStudent, MultipartFile file) {
 		
 		StudentContact studentContact = new StudentContact();
 		studentContact.setGovernmentIdType(registerStudent.getGovernmentIdType());
 		studentContact.setGovernmentIdNo(registerStudent.getGovernmentIdNo());
 		studentContact.setPhone(Long.valueOf(registerStudent.getPhone()));
-		studentContact.setPic(null);
+		try {
+			studentContact.setPic(file.getBytes());
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
 		return studentContact;
 	}
 
@@ -344,7 +354,7 @@ public class StudentAuthenticationController {
 		studentCredentials.setEmail(registerStudent.getEmail());
 
 		// Encrypt user password
-		String otp = PasswordGenerator.generatePassword(8);
+		String otp = PasswordGenerator.generatePassword(10);
 		String oneTimeEncryptedPassword = bcryptPasswordEncoder.encode(otp);
 		studentCredentials.setPassword(oneTimeEncryptedPassword);
 		studentCredentials.setConfirmPassword(oneTimeEncryptedPassword);
