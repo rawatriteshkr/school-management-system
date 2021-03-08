@@ -1,6 +1,8 @@
 package com.kipragno.tech.controller;
 
 import java.io.IOException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import javax.mail.MessagingException;
@@ -62,6 +64,7 @@ public class StudentAuthenticationController {
 	@PostMapping(value = "/register")
 	public ResponseEntity<?> register(@RequestBody @Validated RegisterStudent registerStudent) throws IOException {
 		// Set Student values
+		System.out.println("Date : " + registerStudent.getDob());
 		Student student = setStudentValues(registerStudent);
 		String response = studentAuthenticationService.register(student);
 		if (response != null && response.equals("409")) {
@@ -71,7 +74,7 @@ public class StudentAuthenticationController {
 		} else {
 			response = "Registration No : " + response + "\n" + "Otp : "
 					+ student.getStudentCredentials().getOtp();
-			sendMail(registerStudent.getEmail(), response, "Student Login Credentials");
+			//sendMail(registerStudent.getEmail(), response, "Student Login Credentials");
 			return new ResponseEntity<>(response, HttpStatus.CREATED);
 		}
 	}
@@ -109,7 +112,7 @@ public class StudentAuthenticationController {
 				studentCredentials.setPasswordChangeDate(new Date());
 				studentCredentials.setOtp(otp);
 				generatedOtp = "Otp : " + studentCredentials.getOtp();
-				sendMail(forgetPasswordRequest.getEmail(), generatedOtp, "Student Forget Password Otp");
+				//sendMail(forgetPasswordRequest.getEmail(), generatedOtp, "Student Forget Password Otp");
 				boolean update = studentAuthenticationService.updatePassword(studentCredentials);
 				if(update) {
 					return new ResponseEntity<>(new ForgetPasswordResponse(generatedOtp), HttpStatus.CREATED);
@@ -165,14 +168,7 @@ public class StudentAuthenticationController {
 
 		student.setStudentFullName(studentFullName);
 		
-	/*	try {
-			//Date dob = new SimpleDateFormat("dd/MM/yyyy").parse(registerStudent.getDob());
-			student.setDob(new Date());
-		} catch (ParseException e) {
-			e.printStackTrace();
-		} */
-		student.setDob(new Date());
-		
+		student.setDob(setDateOfBirth(registerStudent));
 		student.setStudentCredentials(studentCredentials);
 		student.setStudentContact(studentContact);
 		student.setFeesDetails(feesDetails);
@@ -182,6 +178,22 @@ public class StudentAuthenticationController {
 		student.setStudentPreviousDetails(studentPreviousDetails);
 
 		return student;
+	}
+
+	private Date setDateOfBirth(RegisterStudent registerStudent) {
+		Date dob = null;
+		String sb = registerStudent.getDob().substring(0, 10);
+		String yyyy = sb.substring(0, 4);
+		String mm = sb.substring(5, 7);
+		String dd = sb.substring(8, 10);
+		String dobString = dd + "/" + mm + "/"+yyyy; 
+		try {
+			dob = new SimpleDateFormat("dd/MM/yyyy").parse(dobString);
+			return dob;
+		} catch (ParseException e) {
+			e.printStackTrace();
+		}
+		return dob;
 	}
 
 	private StudentPreviousDetails setPreviousDetails(RegisterStudent registerStudent) {
