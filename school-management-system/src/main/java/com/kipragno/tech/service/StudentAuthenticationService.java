@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.kipragno.tech.entites.Student;
+import com.kipragno.tech.entites.StudentCredentials;
 import com.kipragno.tech.repo.StudentAuthenticationRepoImpl;
 
 @Service
@@ -26,4 +27,11 @@ public class StudentAuthenticationService implements UserDetailsService{
 		return studentAuthenticationRepoImpl.loadUserByUsername(username);
 	}
 
+	public boolean findStudentByEmail(String email) {
+		return studentAuthenticationRepoImpl.findStudentByEmail(email);
+	}
+
+	public boolean updatePassword(StudentCredentials studentCredentials) {
+		return studentAuthenticationRepoImpl.updatePassword(studentCredentials);
+	}
 }

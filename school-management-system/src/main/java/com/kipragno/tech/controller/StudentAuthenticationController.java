@@ -1,18 +1,12 @@
 package com.kipragno.tech.controller;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import javax.mail.MessagingException;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -25,10 +19,7 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.multipart.MultipartFile;
 
 import com.kipragno.tech.entites.FeesDetails;
 import com.kipragno.tech.entites.GuardianContact;
@@ -40,10 +31,13 @@ import com.kipragno.tech.entites.StudentCredentials;
 import com.kipragno.tech.entites.StudentFullName;
 import com.kipragno.tech.entites.StudentPersonalDetails;
 import com.kipragno.tech.entites.StudentPreviousDetails;
+import com.kipragno.tech.exception.ResourceNotFoundException;
 import com.kipragno.tech.generator.PasswordGenerator;
 import com.kipragno.tech.mail.MailUtil;
 import com.kipragno.tech.model.AuthenticationReponse;
 import com.kipragno.tech.model.AuthenticationRequest;
+import com.kipragno.tech.model.ForgetPasswordRequest;
+import com.kipragno.tech.model.ForgetPasswordResponse;
 import com.kipragno.tech.model.RegisterStudent;
 import com.kipragno.tech.service.StudentAuthenticationService;
 import com.kipragno.tech.util.JwtUtil;
@@ -64,29 +58,20 @@ public class StudentAuthenticationController {
 
 	@Autowired
 	private StudentAuthenticationService studentAuthenticationService;
-
+	
 	@PostMapping(value = "/register")
-	public ResponseEntity<?> register(@RequestPart(value = "file", required = true) MultipartFile file,
-			@RequestPart(value = "register", required = true) @Validated RegisterStudent registerStudent) throws IOException {
-		System.out.println("Image File Name : " + file.getSize());
+	public ResponseEntity<?> register(@RequestBody @Validated RegisterStudent registerStudent) throws IOException {
 		// Set Student values
-		Student student = setStudentValues(registerStudent, file);
+		Student student = setStudentValues(registerStudent);
 		String response = studentAuthenticationService.register(student);
 		if (response != null && response.equals("409")) {
 			return new ResponseEntity<>("Already Registered", HttpStatus.CONFLICT);
 		} else if (response != null && response.equals("500")) {
 			return new ResponseEntity<>("User not registered please try again", HttpStatus.INTERNAL_SERVER_ERROR);
 		} else {
-
-			/* Send regNo and otp
-			 * try {
-				MailUtil.sendMail("******@gmail.com", student.getRegistrationNo(),
-						student.getStudentCredentials().getOtp());
-			} catch (MessagingException e) {
-				e.printStackTrace();
-			}*/
 			response = "Registration No : " + response + "\n" + "Otp : "
 					+ student.getStudentCredentials().getOtp();
+			sendMail(registerStudent.getEmail(), response, "Student Login Credentials");
 			return new ResponseEntity<>(response, HttpStatus.CREATED);
 		}
 	}
@@ -97,7 +82,7 @@ public class StudentAuthenticationController {
 			// Authenticate user
 			authenticate(authenticationRequest.getUsername(), authenticationRequest.getPassword());
 		} catch (Exception e) {
-			return new ResponseEntity<>("Incorrect username or password", HttpStatus.NOT_FOUND);
+			return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
 		}
 
 		final UserDetails userDetails = studentAuthenticationService
@@ -106,15 +91,57 @@ public class StudentAuthenticationController {
 
 		return new ResponseEntity<>(new AuthenticationReponse(jwt), HttpStatus.CREATED);
 	}
+	
+	@PostMapping(value = "/forget_password")
+	public ResponseEntity<?> forgetPassword(@RequestBody ForgetPasswordRequest forgetPasswordRequest) {
+		
+		try {
+			boolean flag = studentAuthenticationService.findStudentByEmail(forgetPasswordRequest.getEmail());
+			String generatedOtp = null;
+			if(flag) {
+				StudentCredentials studentCredentials = new StudentCredentials();
+				studentCredentials.setEmail(forgetPasswordRequest.getEmail());
+				// Encrypt user password
+				String otp = PasswordGenerator.generatePassword(10);
+				String oneTimeEncryptedPassword = bcryptPasswordEncoder.encode(otp);
+				studentCredentials.setPassword(oneTimeEncryptedPassword);
+				studentCredentials.setConfirmPassword(oneTimeEncryptedPassword);
+				studentCredentials.setPasswordChangeDate(new Date());
+				studentCredentials.setOtp(otp);
+				generatedOtp = "Otp : " + studentCredentials.getOtp();
+				sendMail(forgetPasswordRequest.getEmail(), generatedOtp, "Student Forget Password Otp");
+				boolean update = studentAuthenticationService.updatePassword(studentCredentials);
+				if(update) {
+					return new ResponseEntity<>(new ForgetPasswordResponse(generatedOtp), HttpStatus.CREATED);
+				}else {
+					return new ResponseEntity<>("Password not updated", HttpStatus.NOT_FOUND);
+				}
+				
+			}else {
+				return new ResponseEntity<>("Email not registered", HttpStatus.NOT_FOUND);
+			}
+		}catch(ResourceNotFoundException e) {
+			return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
+		}
+		
+	}
 
-	private Student setStudentValues(RegisterStudent registerStudent, MultipartFile file) {
+	private void sendMail(String recepient, String response, String subject) {
+		// Send regNo and otp
+		  try {
+			MailUtil.sendMail(recepient, response, subject);
+		} catch (MessagingException e) {
+			e.printStackTrace();
+		}
+	}
+	private Student setStudentValues(RegisterStudent registerStudent) {
 
 		Student student = new Student();
 		StudentFullName studentFullName = setStudentFullName(registerStudent);
 
 		StudentCredentials studentCredentials = setStudentCredentials(registerStudent);
 
-		StudentContact studentContact = setStudentContact(registerStudent, file);
+		StudentContact studentContact = setStudentContact(registerStudent);
 
 		GuardianDetails guardianDetails = setGuardianDetails(registerStudent);
 
@@ -138,12 +165,13 @@ public class StudentAuthenticationController {
 
 		student.setStudentFullName(studentFullName);
 		
-		try {
-			Date dob = new SimpleDateFormat("dd/MM/yyyy").parse(registerStudent.getDob());
-			student.setDob(dob);
+	/*	try {
+			//Date dob = new SimpleDateFormat("dd/MM/yyyy").parse(registerStudent.getDob());
+			student.setDob(new Date());
 		} catch (ParseException e) {
 			e.printStackTrace();
-		} 
+		} */
+		student.setDob(new Date());
 		
 		student.setStudentCredentials(studentCredentials);
 		student.setStudentContact(studentContact);
@@ -233,11 +261,11 @@ public class StudentAuthenticationController {
 		StudentAddress mailingAddress = new StudentAddress();
 
 		mailingAddress.setAddressType("Mailing Address");
+		mailingAddress.setCountry("India");
 		if ((registerStudent.getMailingAddress().equals("")) || (registerStudent.getMailingAddress().isEmpty())) {
 			mailingAddress.setAddress("NA");
 		} else {
 			mailingAddress.setAddress(registerStudent.getMailingAddress());
-			mailingAddress.setCountry("India");
 		}
 		if ((registerStudent.getMailingCity().equals("")) || (registerStudent.getMailingCity().isEmpty())) {
 			mailingAddress.setCity("NA");
@@ -334,18 +362,13 @@ public class StudentAuthenticationController {
 		return feesDetails;
 	}
 
-	private StudentContact setStudentContact(RegisterStudent registerStudent, MultipartFile file) {
+	private StudentContact setStudentContact(RegisterStudent registerStudent) {
 		
 		StudentContact studentContact = new StudentContact();
 		studentContact.setGovernmentIdType(registerStudent.getGovernmentIdType());
 		studentContact.setGovernmentIdNo(registerStudent.getGovernmentIdNo());
 		studentContact.setPhone(Long.valueOf(registerStudent.getPhone()));
-		try {
-			studentContact.setPic(file.getBytes());
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		
+		studentContact.setPic(null);
 		return studentContact;
 	}
 

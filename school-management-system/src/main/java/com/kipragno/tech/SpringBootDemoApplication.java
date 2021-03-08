@@ -22,7 +22,7 @@ import org.springframework.context.annotation.ComponentScan;
         "com.kipragno.tech.service",
         "com.kipragno.tech.util",
         "com.kipragno.tech.generator",
-        "com.kipragno.tech.mail"
+        "com.kipragno.tech.config.mail"
     })
 public class SpringBootDemoApplication {
 

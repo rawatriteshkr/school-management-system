@@ -75,4 +75,52 @@ public class StudentAuthenticationRepoImpl implements StudentAuthenticationRepo 
 	}
 
 
+	@Override
+	public boolean findStudentByEmail(String email) {
+		Session session = sessionFactory.openSession();
+		String queryString = "from StudentCredentials where email = :email";
+		System.out.println(queryString);
+		Query query = session.createQuery(queryString);
+		query.setString("email", email);
+		try {
+			StudentCredentials studentCredentials = (StudentCredentials) query.getSingleResult();
+			if(studentCredentials !=null) {
+				return true;
+			}else {
+				return false;
+			}
+			 
+		}catch(Exception e) {
+			e.printStackTrace();
+			throw new ResourceNotFoundException("Email not registered");
+		}
+	}
+
+
+	@Override
+	public boolean updatePassword(StudentCredentials studentCredentials) {
+		Session session = sessionFactory.openSession();
+		Transaction transaction = session.beginTransaction();
+		String email = studentCredentials.getEmail();
+		String queryString = "from StudentCredentials where email = :email";
+		System.out.println(queryString);
+		Query query = session.createQuery(queryString);
+		query.setString("email", email);
+		try {
+			StudentCredentials dbStudentCredentials = (StudentCredentials) query.getSingleResult();
+			if(studentCredentials !=null) {
+				dbStudentCredentials.setPassword(studentCredentials.getPassword());
+				dbStudentCredentials.setConfirmPassword(studentCredentials.getConfirmPassword());
+				dbStudentCredentials.setPasswordChangeDate(studentCredentials.getPasswordChangeDate());
+				session.update(dbStudentCredentials);
+				transaction.commit();
+				session.close();
+			}
+			return true;
+		}catch(Exception e) {
+			e.printStackTrace();
+			throw new ResourceNotFoundException("Password not updated");
+		}
+	}
+
 }

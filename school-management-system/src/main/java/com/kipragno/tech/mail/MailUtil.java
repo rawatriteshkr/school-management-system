@@ -12,8 +12,8 @@ import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 
 public class MailUtil {
-
-	public static void sendMail(String recepient, String regno, String otp) throws MessagingException {
+	
+	public static void sendMail(String recepient, String response, String subject) throws MessagingException {
 		Properties properties = new Properties();
 		properties.put("mail.smtp.auth", "true");
 		properties.put("mail.smtp.starttls.enable", "true");
@@ -21,8 +21,8 @@ public class MailUtil {
 		properties.put("mail.smtp.port", "587");
 		
 		String accountEmail = "*******@gmail.com";
-		String password = "***********";
-		
+		String password = "*****@gmail.com";
+
 		Session session = Session.getInstance(properties, new Authenticator() {
 			@Override
 			protected PasswordAuthentication getPasswordAuthentication() {
@@ -30,17 +30,17 @@ public class MailUtil {
 			}
 		});
 		
-		Message message  = prepareMessage(session, accountEmail, recepient, regno, otp);
+		Message message  = prepareMessage(session, accountEmail, recepient, response, subject);
 		Transport.send(message);
 	}
 
-	private static Message prepareMessage(Session session, String accountEmail, String recepient, String regno, String otp) {
+	private static Message prepareMessage(Session session, String accountEmail, String recepient, String response, String subject) {
 		Message message = new MimeMessage(session);
 		try {
 			message.setFrom(new InternetAddress(accountEmail));
 			message.setRecipient(Message.RecipientType.TO, new InternetAddress(recepient));
-			message.setSubject("Student Login Credentials");
-			message.setText("Registration No : " + regno + "\n" + "Password : " + otp);
+			message.setSubject(subject);
+			message.setText(response);
 			return message;
 		} catch (MessagingException e) {
 			e.printStackTrace();
