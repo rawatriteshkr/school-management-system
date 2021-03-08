@@ -1,8 +1,5 @@
 package com.kipragno.tech.controller;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -19,13 +16,12 @@ import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.multipart.MultipartFile;
 
 import com.kipragno.tech.entites.FeesDetails;
 import com.kipragno.tech.entites.GuardianContact;
@@ -37,15 +33,18 @@ import com.kipragno.tech.entites.StudentCredentials;
 import com.kipragno.tech.entites.StudentFullName;
 import com.kipragno.tech.entites.StudentPersonalDetails;
 import com.kipragno.tech.entites.StudentPreviousDetails;
+import com.kipragno.tech.exception.ResourceNotFoundException;
 import com.kipragno.tech.generator.PasswordGenerator;
 import com.kipragno.tech.mail.MailUtil;
 import com.kipragno.tech.model.AuthenticationReponse;
 import com.kipragno.tech.model.AuthenticationRequest;
+import com.kipragno.tech.model.ForgetPasswordRequest;
+import com.kipragno.tech.model.ForgetPasswordResponse;
 import com.kipragno.tech.model.RegisterStudent;
 import com.kipragno.tech.service.StudentAuthenticationService;
 import com.kipragno.tech.util.JwtUtil;
 
-@CrossOrigin
+@CrossOrigin(origins = "*", allowedHeaders = "*")
 @RestController
 @RequestMapping(value = "/api")
 public class StudentAuthenticationController {
@@ -61,11 +60,11 @@ public class StudentAuthenticationController {
 
 	@Autowired
 	private StudentAuthenticationService studentAuthenticationService;
-
+	
 	@PostMapping(value = "/register")
-	public ResponseEntity<?> register(@RequestBody RegisterStudent registerStudent) throws IOException {
-
+	public ResponseEntity<?> register(@RequestBody @Validated RegisterStudent registerStudent) throws IOException {
 		// Set Student values
+		System.out.println("Date : " + registerStudent.getDob());
 		Student student = setStudentValues(registerStudent);
 		String response = studentAuthenticationService.register(student);
 		if (response != null && response.equals("409")) {
@@ -73,16 +72,9 @@ public class StudentAuthenticationController {
 		} else if (response != null && response.equals("500")) {
 			return new ResponseEntity<>("User not registered please try again", HttpStatus.INTERNAL_SERVER_ERROR);
 		} else {
-
-			/* Send regNo and otp
-			 * try {
-				MailUtil.sendMail("******@gmail.com", student.getRegistrationNo(),
-						student.getStudentCredentials().getOtp());
-			} catch (MessagingException e) {
-				e.printStackTrace();
-			}*/
 			response = "Registration No : " + response + "\n" + "Otp : "
 					+ student.getStudentCredentials().getOtp();
+			//sendMail(registerStudent.getEmail(), response, "Student Login Credentials");
 			return new ResponseEntity<>(response, HttpStatus.CREATED);
 		}
 	}
@@ -93,7 +85,7 @@ public class StudentAuthenticationController {
 			// Authenticate user
 			authenticate(authenticationRequest.getUsername(), authenticationRequest.getPassword());
 		} catch (Exception e) {
-			return new ResponseEntity<>("Incorrect username or password", HttpStatus.NOT_FOUND);
+			return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
 		}
 
 		final UserDetails userDetails = studentAuthenticationService
@@ -102,7 +94,49 @@ public class StudentAuthenticationController {
 
 		return new ResponseEntity<>(new AuthenticationReponse(jwt), HttpStatus.CREATED);
 	}
+	
+	@PostMapping(value = "/forget_password")
+	public ResponseEntity<?> forgetPassword(@RequestBody ForgetPasswordRequest forgetPasswordRequest) {
+		
+		try {
+			boolean flag = studentAuthenticationService.findStudentByEmail(forgetPasswordRequest.getEmail());
+			String generatedOtp = null;
+			if(flag) {
+				StudentCredentials studentCredentials = new StudentCredentials();
+				studentCredentials.setEmail(forgetPasswordRequest.getEmail());
+				// Encrypt user password
+				String otp = PasswordGenerator.generatePassword(10);
+				String oneTimeEncryptedPassword = bcryptPasswordEncoder.encode(otp);
+				studentCredentials.setPassword(oneTimeEncryptedPassword);
+				studentCredentials.setConfirmPassword(oneTimeEncryptedPassword);
+				studentCredentials.setPasswordChangeDate(new Date());
+				studentCredentials.setOtp(otp);
+				generatedOtp = "Otp : " + studentCredentials.getOtp();
+				//sendMail(forgetPasswordRequest.getEmail(), generatedOtp, "Student Forget Password Otp");
+				boolean update = studentAuthenticationService.updatePassword(studentCredentials);
+				if(update) {
+					return new ResponseEntity<>(new ForgetPasswordResponse(generatedOtp), HttpStatus.CREATED);
+				}else {
+					return new ResponseEntity<>("Password not updated", HttpStatus.NOT_FOUND);
+				}
+				
+			}else {
+				return new ResponseEntity<>("Email not registered", HttpStatus.NOT_FOUND);
+			}
+		}catch(ResourceNotFoundException e) {
+			return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
+		}
+		
+	}
 
+	private void sendMail(String recepient, String response, String subject) {
+		// Send regNo and otp
+		  try {
+			MailUtil.sendMail(recepient, response, subject);
+		} catch (MessagingException e) {
+			e.printStackTrace();
+		}
+	}
 	private Student setStudentValues(RegisterStudent registerStudent) {
 
 		Student student = new Student();
@@ -134,13 +168,7 @@ public class StudentAuthenticationController {
 
 		student.setStudentFullName(studentFullName);
 		
-		try {
-			Date dob = new SimpleDateFormat("dd/MM/yyyy").parse(registerStudent.getDob());
-			student.setDob(dob);
-		} catch (ParseException e) {
-			e.printStackTrace();
-		} 
-		
+		student.setDob(setDateOfBirth(registerStudent));
 		student.setStudentCredentials(studentCredentials);
 		student.setStudentContact(studentContact);
 		student.setFeesDetails(feesDetails);
@@ -150,6 +178,22 @@ public class StudentAuthenticationController {
 		student.setStudentPreviousDetails(studentPreviousDetails);
 
 		return student;
+	}
+
+	private Date setDateOfBirth(RegisterStudent registerStudent) {
+		Date dob = null;
+		String sb = registerStudent.getDob().substring(0, 10);
+		String yyyy = sb.substring(0, 4);
+		String mm = sb.substring(5, 7);
+		String dd = sb.substring(8, 10);
+		String dobString = dd + "/" + mm + "/"+yyyy; 
+		try {
+			dob = new SimpleDateFormat("dd/MM/yyyy").parse(dobString);
+			return dob;
+		} catch (ParseException e) {
+			e.printStackTrace();
+		}
+		return dob;
 	}
 
 	private StudentPreviousDetails setPreviousDetails(RegisterStudent registerStudent) {
@@ -228,11 +272,12 @@ public class StudentAuthenticationController {
 
 		StudentAddress mailingAddress = new StudentAddress();
 
+		mailingAddress.setAddressType("Mailing Address");
+		mailingAddress.setCountry("India");
 		if ((registerStudent.getMailingAddress().equals("")) || (registerStudent.getMailingAddress().isEmpty())) {
 			mailingAddress.setAddress("NA");
 		} else {
 			mailingAddress.setAddress(registerStudent.getMailingAddress());
-			mailingAddress.setCountry("India");
 		}
 		if ((registerStudent.getMailingCity().equals("")) || (registerStudent.getMailingCity().isEmpty())) {
 			mailingAddress.setCity("NA");
@@ -256,7 +301,7 @@ public class StudentAuthenticationController {
 	private StudentAddress setPermanentAddress(RegisterStudent registerStudent) {
 		
 		StudentAddress permanentAddress = new StudentAddress();
-		
+		permanentAddress.setAddressType("Permanent Address");
 		permanentAddress.setAddress(registerStudent.getPermanentAddress());
 		permanentAddress.setCity(registerStudent.getPermanentCity());
 		permanentAddress.setState(registerStudent.getPermanentState());
@@ -344,7 +389,7 @@ public class StudentAuthenticationController {
 		studentCredentials.setEmail(registerStudent.getEmail());
 
 		// Encrypt user password
-		String otp = PasswordGenerator.generatePassword(8);
+		String otp = PasswordGenerator.generatePassword(10);
 		String oneTimeEncryptedPassword = bcryptPasswordEncoder.encode(otp);
 		studentCredentials.setPassword(oneTimeEncryptedPassword);
 		studentCredentials.setConfirmPassword(oneTimeEncryptedPassword);

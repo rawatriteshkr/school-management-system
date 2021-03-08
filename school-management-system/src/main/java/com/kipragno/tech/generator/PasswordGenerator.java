@@ -1,6 +1,6 @@
 package com.kipragno.tech.generator;
 
-import java.util.Random;
+import java.security.SecureRandom;
 
 public class PasswordGenerator {
 
@@ -10,18 +10,13 @@ public class PasswordGenerator {
 		String lowerCaseLetters = "abcdefghijklmnopqrstuvwxyz";
 		String specialCharacters = "!@#$";
 		String numbers = "1234567890";
-		String combinedChars = capitalCaseLetters + lowerCaseLetters + specialCharacters + numbers;
-		Random random = new Random();
-		char[] password = new char[length];
+		final String combinedChars = numbers + capitalCaseLetters + specialCharacters + lowerCaseLetters;
+		
+		SecureRandom secureRnd = new SecureRandom();
 
-		password[0] = lowerCaseLetters.charAt(random.nextInt(lowerCaseLetters.length()));
-		password[1] = capitalCaseLetters.charAt(random.nextInt(capitalCaseLetters.length()));
-		password[2] = specialCharacters.charAt(random.nextInt(specialCharacters.length()));
-		password[3] = numbers.charAt(random.nextInt(numbers.length()));
-
-		for (int i = 4; i < length; i++) {
-			password[i] = combinedChars.charAt(random.nextInt(combinedChars.length()));
-		}
-		return String.valueOf(password);
+		StringBuilder sb = new StringBuilder(length); 
+		for (int i = 0; i < length; i++) 
+			sb.append(combinedChars.charAt(secureRnd.nextInt(combinedChars.length()))); 
+		return sb.toString(); 
 	}
 }

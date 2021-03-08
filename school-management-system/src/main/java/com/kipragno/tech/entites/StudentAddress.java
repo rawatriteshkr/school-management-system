@@ -15,6 +15,8 @@ public class StudentAddress {
 	@GeneratedValue(strategy = GenerationType.AUTO)
 	@Column(name = "address_id")
 	private Long addressId;
+	@Column(name = "address_type" , nullable = false)
+	private String addressType;
 	@Column(name = "address" , nullable = false)
 	private String address;
 	@Column(name = "state", nullable = false)
@@ -30,9 +32,10 @@ public class StudentAddress {
 		super();
 	}
 
-	public StudentAddress(Long addressId, String address, String state, String city, Long pincode, String country) {
+	public StudentAddress(Long addressId, String addressType, String address, String state, String city, Long pincode, String country) {
 		super();
 		this.addressId = addressId;
+		this.addressType = addressType;
 		this.address = address;
 		this.state = state;
 		this.city = city;
@@ -88,4 +91,13 @@ public class StudentAddress {
 		this.country = country;
 	}
 
+	public String getAddressType() {
+		return addressType;
+	}
+
+	public void setAddressType(String addressType) {
+		this.addressType = addressType;
+	}
+
+	
 }
